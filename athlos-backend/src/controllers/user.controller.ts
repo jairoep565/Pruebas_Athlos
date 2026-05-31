@@ -11,22 +11,26 @@ export const getProfile = async (req: Request, res: Response) => {
         );
 
         if (result.rowCount === 0)
-            return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+            return res.status(404).json({ 
+        success: false, 
+        message: "Usuario no encontrado." });
 
-        return res.status(200).json({ success: true, data: result.rows[0] });
+        return res.status(200).json({ 
+        success: true, 
+        data: result.rows[0] });
     } catch (error) {
         console.error("Error:", error);
-        return res.status(500).json({ success: false, message: (error as any).message || "Error interno del servidor." });
+        return res.status(500).json({ 
+        success: false, 
+        message: (error as any).message || "Error interno del servidor." });
     }
 };
 
-// PUT /api/user/profile  ←  lo llaman Datos-Usuario.tsx y Perfil.tsx
+// PUT /api/user/profile  
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { nombre, email, peso, talla, edad } = req.body;
 
-        // Perfil.tsx manda nombre+email+peso+talla+edad
-        // Datos-Usuario.tsx manda solo peso+talla+edad
         let result;
         if (nombre && email) {
             result = await db.query(
@@ -45,16 +49,22 @@ export const updateProfile = async (req: Request, res: Response) => {
         }
 
         if (result.rowCount === 0)
-            return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+            return res.status(404).json({ 
+            success: false, 
+            message: "Usuario no encontrado." });
 
-        return res.status(200).json({ success: true, data: result.rows[0] });
+        return res.status(200).json({ 
+            success: true, 
+            data: result.rows[0] });
     } catch (error) {
         console.error("Error:", error);
-        return res.status(500).json({ success: false, message: (error as any).message || "Error interno del servidor." });
+        return res.status(500).json({ 
+            success: false, 
+            message: (error as any).message || "Error interno del servidor." });
     }
 };
 
-// PUT /api/user/environment  ←  lo llama Entorno-Entrenamiento.tsx
+// PUT /api/user/environment  
 export const updateEnvironment = async (req: Request, res: Response) => {
     try {
         const { identorno } = req.body;
@@ -67,11 +77,17 @@ export const updateEnvironment = async (req: Request, res: Response) => {
         );
 
         if (result.rowCount === 0)
-            return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+            return res.status(404).json({ 
+        success: false, 
+        message: "Usuario no encontrado." });
 
-        return res.status(200).json({ success: true, data: result.rows[0] });
+        return res.status(200).json({ 
+        success: true, 
+        data: result.rows[0] });
     } catch (error) {
         console.error("Error:", error);
-        return res.status(500).json({ success: false, message: (error as any).message || "Error interno del servidor." });
+        return res.status(500).json({ 
+        success: false, 
+        message: (error as any).message || "Error interno del servidor." });
     }
 };
