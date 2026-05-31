@@ -1,23 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-const BASE_SYSTEM_PROMPT = `Eres Athlos, una entrenadora experta de acondicionamiento físico con Inteligencia Artificial.
-Tu objetivo es guiar al usuario en sus entrenamientos y resolver sus dudas sobre ejercicios, rutinas y salud física de forma motivadora, profesional y enérgica en español.`;
-
-interface Ejercicio {
-    id: string;
-    nombre: string;
-    grupo_muscular: string;
-    objetivo: string;
-    ambiente: string;
-    dificultad: string;
-    descripcion: string;
-    series: string;
-    repeticiones: string;
-    instrucciones: string;
-}
+const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
 
 interface Mensaje {
     id: string;
@@ -28,7 +12,6 @@ interface Mensaje {
 
 const Chat: React.FC = () => {
     const navigate = useNavigate();
-    const [ejercicios, setEjercicios] = useState<Ejercicio[]>([]);
     const [datosFisicos, setDatosFisicos] = useState({
         nombre: "", peso: "", talla: "", edad: "", complexion: "", objetivo: "", entorno: "",
     });
@@ -74,11 +57,6 @@ const Chat: React.FC = () => {
         };
         setDatosFisicos(physicalData);
 
-        fetch("/ejercicios.csv")
-            .then((res) => { if (!res.ok) throw new Error("No se pudo cargar ejercicios.csv"); return res.text(); })
-            .then((text) => setEjercicios(parseCSV(text)))
-            .catch((err) => console.error("Error cargando ejercicios de referencia:", err));
-
         const cachedChat = localStorage.getItem("athlos_chat_history");
         if (cachedChat) {
             try {
@@ -112,63 +90,6 @@ const Chat: React.FC = () => {
             timestamp: new Date(),
         }]);
     };
-
-    const parseCSV = (text: string): Ejercicio[] => {
-        const lines = text.split("\n");
-        if (lines.length === 0) return [];
-        const headers = lines[0].split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""));
-        const data: Ejercicio[] = [];
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            const row: string[] = [];
-            let insideQuote = false;
-            let entry = "";
-            for (let j = 0; j < line.length; j++) {
-                const char = line[j];
-                if (char === '"') { insideQuote = !insideQuote; }
-                else if (char === "," && !insideQuote) { row.push(entry.trim().replace(/^["']|["']$/g, "")); entry = ""; }
-                else { entry += char; }
-            }
-            row.push(entry.trim().replace(/^["']|["']$/g, ""));
-            if (row.length >= headers.length) {
-                const obj: any = {};
-                headers.forEach((header, index) => { obj[header] = row[index] || ""; });
-                data.push(obj as Ejercicio);
-            }
-        }
-        return data;
-    };
-
-    const buildSystemPrompt = (): string => {
-        const catalogoCompleto = ejercicios
-            .map((ex) => `- ${ex.nombre} | Músculo: ${ex.grupo_muscular} | Objetivo: ${ex.objetivo} | Entorno: ${ex.ambiente} | Dificultad: ${ex.dificultad} | Series: ${ex.series} | Reps: ${ex.repeticiones} | Técnica: ${ex.instrucciones}`)
-            .join("\n");
-
-        return `${BASE_SYSTEM_PROMPT}
-
-DATOS FÍSICOS DEL USUARIO (usa estos datos para personalizar las rutinas):
-- Nombre: ${datosFisicos.nombre || "Usuario"}
-- Peso: ${datosFisicos.peso ? `${datosFisicos.peso} kg` : "No especificado"}
-- Talla: ${datosFisicos.talla ? `${datosFisicos.talla} cm` : "No especificada"}
-- Edad: ${datosFisicos.edad ? `${datosFisicos.edad} años` : "No especificada"}
-- Complexión: ${datosFisicos.complexion || "No especificada"}
-- Objetivo: ${datosFisicos.objetivo || "No especificado"}
-- Entorno de entrenamiento: ${datosFisicos.entorno || "No especificado"}
-
-CATÁLOGO COMPLETO DE EJERCICIOS DISPONIBLES (ejercicios.csv):
-${catalogoCompleto || "Error: no se pudo cargar el catálogo de ejercicios."}
-
-REGLAS OBLIGATORIAS:
-1. Cuando el usuario pida rutinas, planes o ejercicios, SIEMPRE responde usando EXCLUSIVAMENTE ejercicios del catálogo de arriba. NUNCA inventes ejercicios.
-2. Para cada ejercicio que sugieras incluye: nombre exacto, grupo muscular, series, repeticiones y técnica de ejecución tal como aparecen en el catálogo.
-3. Filtra los ejercicios según el entorno del usuario (casa/gimnasio/aire_libre). Si su entorno es "casa", solo sugiere ejercicios con entorno "casa".
-4. Prioriza ejercicios cuyo objetivo coincida con el objetivo del usuario.
-5. Personaliza la rutina mencionando el peso, talla y edad del usuario para justificar tus elecciones.
-6. Si el usuario no ha configurado sus datos físicos, invítalo amablemente a completar su perfil.
-7. Responde siempre en español, de forma motivadora y estructurada con viñetas.`;
-    };
-
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputMsg.trim() || loading) return;
@@ -183,46 +104,36 @@ REGLAS OBLIGATORIAS:
             timestamp: new Date(),
         };
 
-        const nuevoHistorial = [...mensajes, userMsg];
-        setMensajes(nuevoHistorial);
+        setMensajes((prev) => [...prev, userMsg]);
         setLoading(true);
 
-        if (!GEMINI_API_KEY || GEMINI_API_KEY === "TU_API_KEY_AQUI") {
-            setTimeout(() => {
-                setMensajes((prev) => [...prev, {
-                    id: `msg-${Date.now()}-sys`,
-                    sender: "athlos",
-                    text: `⚠️ **¡Llave de API no configurada!**\n\nPor favor, ingresa tu Gemini API Key en la parte superior del archivo \`src/pages/Chat.tsx\` (\`const GEMINI_API_KEY = "..."\`) o configúrala en tus variables de entorno para habilitar las respuestas en tiempo real de Athlos AI.`,
-                    timestamp: new Date(),
-                }]);
-                setLoading(false);
-            }, 1000);
-            return;
-        }
-
         try {
-            const systemPrompt = buildSystemPrompt();
-            const contents = nuevoHistorial
+            const userId = localStorage.getItem("athlos_idusuario") || "1";
+            const historial = mensajes
                 .filter((msg) => msg.sender === "user" || msg.sender === "athlos")
-                .map((msg) => ({ role: msg.sender === "user" ? "user" : "model", parts: [{ text: msg.text }] }));
+                .map((msg) => ({
+                    sender: msg.sender,
+                    text: msg.text,
+                    timestamp: msg.timestamp.toISOString(),
+                }));
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents,
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-                    }),
-                }
-            );
+            const response = await fetch(`${URL_BACKEND}/api/chat/message`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-user-id": userId,
+                },
+                body: JSON.stringify({ mensaje: userMessageText, historial }),
+            });
 
-            if (!response.ok) throw new Error(`Error en API: ${response.status} ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Error en backend: ${response.status}`);
+            }
 
             const data = await response.json();
-            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, no he podido procesar esa consulta. Inténtalo de nuevo.";
+            const responseText =
+                data.data?.respuesta ||
+                "Lo siento, no he podido procesar esa consulta.";
 
             setMensajes((prev) => [...prev, {
                 id: `msg-${Date.now()}-a`,
@@ -231,7 +142,6 @@ REGLAS OBLIGATORIAS:
                 timestamp: new Date(),
             }]);
 
-            // Detectar si la respuesta contiene un plan de entrenamiento
             const lowerResp = responseText.toLowerCase();
             const esRutina = (
                 (lowerResp.includes("rutina") || lowerResp.includes("plan") || lowerResp.includes("entrenamiento") || lowerResp.includes("ejercicio")) &&
@@ -242,18 +152,17 @@ REGLAS OBLIGATORIAS:
                 scheduleTrainingNotification();
             }
         } catch (err) {
-            console.error("Error al conectar con Gemini API:", err);
+            console.error("Error al conectar con backend:", err);
             setMensajes((prev) => [...prev, {
                 id: `msg-${Date.now()}-err`,
                 sender: "athlos",
-                text: `❌ **Error de conexión**\n\nNo he podido conectarme con la API de Gemini. Por favor verifica que tu API Key sea correcta y tengas conexión a internet.`,
+                text: `**Error de conexion**\n\nNo he podido conectarme con el backend de Athlos. Verifica que el servidor este encendido y que GEMINI_API_KEY este configurada en el backend.`,
                 timestamp: new Date(),
             }]);
         } finally {
             setLoading(false);
         }
     };
-
     const scheduleTrainingNotification = () => {
         // Limpiar timer previo si existe
         if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
