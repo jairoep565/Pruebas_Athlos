@@ -12,9 +12,13 @@ interface Mensaje {
 
 const Chat: React.FC = () => {
     const navigate = useNavigate();
+
     const [datosFisicos, setDatosFisicos] = useState({
-        nombre: "", peso: "", talla: "", edad: "", complexion: "", objetivo: "", entorno: "",
+        nombre: "", peso: "", talla: "", edad: "", entorno: "",
     });
+
+    const [error, setError] = useState("");
+    
 
     const [mensajes, setMensajes] = useState<Mensaje[]>([]);
     const [inputMsg, setInputMsg] = useState("");
@@ -24,55 +28,71 @@ const Chat: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const mostrarObjetivo: Record<string, string> = {
-        bajar_peso: "Bajar Peso",
-        mantener_peso: "Mantener Peso",
-        ganar_musculo: "Ganar Músculo",
-    };
-
     const mostrarEntorno: Record<string, string> = {
         casa: "Casa",
         gimnasio: "Gimnasio",
         aire_libre: "Aire libre",
     };
 
+    const cargarPerfil = async () => {
+      try {
+        const response = await fetch(`${URL_BACKEND}/api/user/profile`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("athlos_token")}`
+          }
+        });
+        const data = await response.json();
+        if (data.success) {
+          const u = data.data;
+          setDatosFisicos({
+            nombre: u.nombre || "",
+            peso: u.peso?.toString() || "",
+            talla: u.talla?.toString() || "",
+            edad: u.edad?.toString() || "",
+            entorno: u.identorno === 1 ? "casa" : u.identorno === 2 ? "gimnasio" : "aire_libre",
+          });
+        }
+      } catch (err) {
+        setError("No se pudo cargar el perfil.");
+        console.error("Error al cargar perfil:", error);
+      }
+    };
+    
     useEffect(() => {
-        // Solicitar permiso de notificaciones del navegador
+        // Solicitar permiso de notificaciones
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
         }
 
-        const usuario = JSON.parse(localStorage.getItem("athlos_usuario") || "{}");
-        const datos = JSON.parse(localStorage.getItem("athlos_datos") || "{}");
-        const entorno = JSON.parse(localStorage.getItem("athlos_entorno") || "{}");
-
-        const physicalData = {
-            nombre: usuario.nombre || "Usuario",
-            peso: datos.peso || "",
-            talla: datos.talla || "",
-            edad: datos.edad || "",
-            complexion: datos.complexion || "",
-            objetivo: datos.objetivo || "",
-            entorno: entorno.ambiente || "",
-        };
-        setDatosFisicos(physicalData);
-
-        const cachedChat = localStorage.getItem("athlos_chat_history");
-        if (cachedChat) {
-            try {
-                const parsedHistory = JSON.parse(cachedChat).map((msg: any) => ({ ...msg, timestamp: new Date(msg.timestamp) }));
-                setMensajes(parsedHistory);
-            } catch (e) {
-                inicializarMensajeBienvenida(physicalData.nombre);
-            }
-        } else {
-            inicializarMensajeBienvenida(physicalData.nombre || "Usuario");
-        }
+        cargarPerfil(); // Solo disparamos la carga
 
         return () => {
             if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
         };
-    }, []);
+    }, []);    
+
+    useEffect(() => {
+        
+        if (datosFisicos.nombre === "") return; 
+
+        console.log("Variable datosFisicos:", datosFisicos);
+
+        const cachedChat = localStorage.getItem("athlos_chat_history");
+        if (cachedChat) {
+            try {
+                const parsedHistory = JSON.parse(cachedChat).map((msg: any) => ({ 
+                    ...msg, 
+                    timestamp: new Date(msg.timestamp) 
+                }));
+                setMensajes(parsedHistory);
+            } catch (e) {
+                inicializarMensajeBienvenida(datosFisicos.nombre);
+            }
+        } else {
+            inicializarMensajeBienvenida(datosFisicos.nombre);
+        }
+
+    }, [datosFisicos]);
 
     useEffect(() => {
         if (mensajes.length > 0) localStorage.setItem("athlos_chat_history", JSON.stringify(mensajes));
@@ -199,7 +219,7 @@ const Chat: React.FC = () => {
     const handleLimpiarChat = () => {
         if (window.confirm("¿Deseas borrar todo el historial de conversación con Athlos?")) {
             localStorage.removeItem("athlos_chat_history");
-            inicializarMensajeBienvenida(datosFisicos.nombre || "Usuario");
+            inicializarMensajeBienvenida(datosFisicos.nombre);
         }
     };
 
@@ -300,16 +320,13 @@ const Chat: React.FC = () => {
                 </div>
 
                 {/* MÉTRICAS DEL PERFIL */}
-                {datosFisicos.peso || datosFisicos.objetivo || datosFisicos.entorno ? (
+                {datosFisicos.peso || datosFisicos.entorno ? (
                     <div className="d-flex flex-wrap gap-1 justify-content-center mb-3 p-2 rounded alert-glass-info" style={{ background: "rgba(116, 195, 210, 0.06)", border: "1px solid rgba(116, 195, 210, 0.15)" }}>
                         {datosFisicos.peso && (
                             <span className="badge badge-glass font-monospace">⚖️ {datosFisicos.peso} kg</span>
                         )}
                         {datosFisicos.talla && (
                             <span className="badge badge-glass font-monospace">📏 {datosFisicos.talla} cm</span>
-                        )}
-                        {datosFisicos.objetivo && (
-                            <span className="badge badge-glass">🎯 {mostrarObjetivo[datosFisicos.objetivo] || datosFisicos.objetivo}</span>
                         )}
                         {datosFisicos.entorno && (
                             <span className="badge badge-glass">📍 {mostrarEntorno[datosFisicos.entorno] || datosFisicos.entorno}</span>
