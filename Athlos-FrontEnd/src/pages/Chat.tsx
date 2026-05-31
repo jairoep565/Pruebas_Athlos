@@ -14,7 +14,7 @@ const Chat: React.FC = () => {
     const navigate = useNavigate();
 
     const [datosFisicos, setDatosFisicos] = useState({
-        nombre: "", peso: "", talla: "", edad: "", entorno: "",
+        nombre: "", peso: "", talla: "", edad: "", entorno: "", idusuario: 1,
     });
 
     const [error, setError] = useState("");
@@ -43,6 +43,7 @@ const Chat: React.FC = () => {
         });
         const data = await response.json();
         if (data.success) {
+          console.log("Datos del perfil obtenidos:", data.data);
           const u = data.data;
           setDatosFisicos({
             nombre: u.nombre || "",
@@ -50,6 +51,7 @@ const Chat: React.FC = () => {
             talla: u.talla?.toString() || "",
             edad: u.edad?.toString() || "",
             entorno: u.identorno === 1 ? "casa" : u.identorno === 2 ? "gimnasio" : "aire_libre",
+            idusuario: u.idusuario || 1,
           });
         }
       } catch (err) {
@@ -128,7 +130,7 @@ const Chat: React.FC = () => {
         setLoading(true);
 
         try {
-            const userId = localStorage.getItem("athlos_idusuario") || "1";
+            const userId = datosFisicos.idusuario || "1";
             const historial = mensajes
                 .filter((msg) => msg.sender === "user" || msg.sender === "athlos")
                 .map((msg) => ({
@@ -141,7 +143,7 @@ const Chat: React.FC = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-user-id": userId,
+                    "x-user-id": userId.toString(),
                 },
                 body: JSON.stringify({ mensaje: userMessageText, historial }),
             });
