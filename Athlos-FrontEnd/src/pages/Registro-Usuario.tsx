@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
+
 const RegistroUsuario = () => {
     const navigate = useNavigate();
     const [nombre, setNombre] = useState<string>("");
@@ -12,10 +14,9 @@ const RegistroUsuario = () => {
     const [error, setError] = useState<string>("");
     const [registroExitoso, setRegistroExitoso] = useState<boolean>(false);
     const [mostrarModalTerminos, setMostrarModalTerminos] = useState<boolean>(false);
-
     const [codigoIngresado, setCodigoIngresado] = useState<string>("");
     const [errorVerificacion, setErrorVerificacion] = useState<string>("");
-    const simularCodigo = "123456";
+    const [codigoSimulado, setCodigoSimulado] = useState<string>("");
 
     const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.currentTarget.value);
     const handleCorreoChange = (e: React.ChangeEvent<HTMLInputElement>) => setCorreo(e.currentTarget.value);
@@ -23,7 +24,7 @@ const RegistroUsuario = () => {
     const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.currentTarget.value);
     const handleAceptarTerminosChange = (e: React.ChangeEvent<HTMLInputElement>) => setAceptoTerminos(e.currentTarget.checked);
 
-    const handleRegisterSubmit = (e: React.FormEvent) => {
+    const handleRegisterSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -40,18 +41,43 @@ const RegistroUsuario = () => {
             return;
         }
 
-        setRegistroExitoso(true);
+        try {
+            const response = await fetch(`${URL_BACKEND}/api/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nombre, email: correo, password })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                setError(data.message);
+                return;
+            }
+            setCodigoSimulado(data.codigoSimulado);
+            setRegistroExitoso(true);
+        } catch (err) {
+            setError("No se pudo conectar con el servidor.");
+        }
     };
 
-    const handleVerifySubmit = (e: React.FormEvent) => {
+    const handleVerifySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorVerificacion("");
 
-        if (codigoIngresado === simularCodigo) {
-            localStorage.setItem("athlos_usuario", JSON.stringify({ nombre, correo }));
+        try {
+            const response = await fetch(`${URL_BACKEND}/api/auth/verify-email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: correo, codigo: codigoIngresado })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                setErrorVerificacion(data.message);
+                return;
+            }
+            localStorage.setItem("athlos_token", data.data.token);
             navigate("/DatosUsuario");
-        } else {
-            setErrorVerificacion("Código incorrecto. Utilice el código simulado para la prueba.");
+        } catch (err) {
+            setErrorVerificacion("No se pudo conectar con el servidor.");
         }
     };
 
@@ -192,7 +218,7 @@ const RegistroUsuario = () => {
                                     <a
                                         href="#"
                                         className="link-teal"
-                                        onClick={(e) => { e.preventDefault(); navigate("/"); }}
+                                        onClick={(e) => { e.preventDefault(); navigate("/Entorno"); }}
                                     >
                                         Inicie sesión
                                     </a>
@@ -218,7 +244,7 @@ const RegistroUsuario = () => {
                                 Hemos simulado el envío de un código de verificación a su bandeja:
                             </span>
                             <div className="mt-2 text-center py-2 rounded bg-black bg-opacity-20 font-monospace fw-bold" style={{ fontSize: "1.2rem", color: "#fcd385", letterSpacing: "2px" }}>
-                                {simularCodigo}
+                                {codigoSimulado}
                             </div>
                         </div>
 

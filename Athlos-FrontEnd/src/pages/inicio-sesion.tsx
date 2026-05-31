@@ -14,7 +14,7 @@ const LoginPage = () => {
         navigate("/nueva-contraseña");
     };
 
-    const loginHandler = (e: React.FormEvent) => {
+    const loginHandler = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -23,12 +23,24 @@ const LoginPage = () => {
             return;
         }
 
-        if (usuario === "usuario@gmail.com" && password === "123") {
+        try {
+            const response = await fetch(`${URL_BACKEND}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: usuario, password })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                setError(data.message);
+                return;
+            }
+
+            localStorage.setItem("athlos_token", data.data.token);
             navigate("/Menu");
-        } else if (usuario === "admin@gmail.com" && password === "123") {
-            navigate("/Menu");
-        } else {
-            setError("Credenciales incorrectas. Pruebe con usuario@gmail.com y clave 123.");
+        } catch (err) {
+            setError("No se pudo conectar con el servidor.");
         }
     };
 

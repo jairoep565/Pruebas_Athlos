@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
+
 type Ambiente = "casa" | "gimnasio" | "aire_libre";
+
+const ENTORNO_ID: Record<Ambiente, number> = {
+    casa: 1,
+    gimnasio: 2,
+    aire_libre: 3,
+};
 
 const ENTORNOS: { value: Ambiente; label: string; icono: string }[] = [
     {
@@ -24,10 +32,29 @@ const ENTORNOS: { value: Ambiente; label: string; icono: string }[] = [
 const EntornoEntrenamiento = () => {
     const navigate = useNavigate();
     const [entorno, setEntorno] = useState<Ambiente>("casa");
+    const [error, setError] = useState<string>("");
 
-    const handleContinuar = () => {
-        localStorage.setItem("athlos_entorno", JSON.stringify({ ambiente: entorno }));
-        navigate("/Perfil");
+    const handleContinuar = async () => {
+        try {
+            const response = await fetch(`${URL_BACKEND}/api/user/environment`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("athlos_token")}`
+                },
+                body: JSON.stringify({ identorno: ENTORNO_ID[entorno] })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                setError(data.message);
+                return;
+            }
+
+            navigate("/Menu");
+        } catch (err) {
+            setError("No se pudo conectar con el servidor.");
+        }
     };
 
     return (
@@ -62,6 +89,10 @@ const EntornoEntrenamiento = () => {
                         </button>
                     ))}
                 </div>
+
+                {error && (
+                    <div className="alert-glass-error mb-3 text-start">{error}</div>
+                )}
 
                 <div className="d-grid mt-4">
                     <button onClick={handleContinuar} className="btn glass-btn-accent py-2" type="button">

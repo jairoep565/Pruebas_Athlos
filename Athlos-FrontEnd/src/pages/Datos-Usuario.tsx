@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-type Complexion = "ectomorfo" | "mesomorfo" | "endomorfo";
-type Objetivo = "bajar_peso" | "mantener_peso" | "ganar_musculo";
+const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
 
 const DatosUsuario = () => {
     const navigate = useNavigate();
@@ -10,15 +9,9 @@ const DatosUsuario = () => {
     const [peso, setPeso] = useState<string>("");
     const [talla, setTalla] = useState<string>("");
     const [edad, setEdad] = useState<string>("");
-    const [complexion, setComplexion] = useState<Complexion>("mesomorfo");
-    const [objetivo, setObjetivo] = useState<Objetivo>("bajar_peso");
     const [error, setError] = useState<string>("");
     const [guardadoExitoso, setGuardadoExitoso] = useState<boolean>(false);
     const [idDatosGenerado, setIdDatosGenerado] = useState<string>("");
-
-    const handlePesoChange = (e: React.ChangeEvent<HTMLInputElement>) => setPeso(e.currentTarget.value);
-    const handleTallaChange = (e: React.ChangeEvent<HTMLInputElement>) => setTalla(e.currentTarget.value);
-    const handleEdadChange = (e: React.ChangeEvent<HTMLInputElement>) => setEdad(e.currentTarget.value);
 
     const pesoNum = Number(peso);
     const tallaM = Number(talla) / 100;
@@ -30,7 +23,7 @@ const DatosUsuario = () => {
         imc < 25 ? "Peso normal" :
         imc < 30 ? "Sobrepeso" : "Obesidad";
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -42,21 +35,39 @@ const DatosUsuario = () => {
             setError("El peso debe estar entre 20 y 400 kg.");
             return;
         }
-        const tallaNum = Number(talla);
-        if (tallaNum < 80 || tallaNum > 260) {
+        if (Number(talla) < 80 || Number(talla) > 260) {
             setError("La talla debe estar entre 80 y 260 cm.");
             return;
         }
-        const edadNum = Number(edad);
-        if (edadNum < 10 || edadNum > 120) {
+        if (Number(edad) < 10 || Number(edad) > 120) {
             setError("La edad debe estar entre 10 y 120 años.");
             return;
         }
 
-        const idGenerado = `DATOS-${Math.floor(1000 + Math.random() * 9000)}`;
-        setIdDatosGenerado(idGenerado);
-        localStorage.setItem("athlos_datos", JSON.stringify({ peso, talla, edad, complexion, objetivo }));
-        setGuardadoExitoso(true);
+        try {
+            const response = await fetch(`${URL_BACKEND}/api/user/profile`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("athlos_token")}`
+                },
+                body: JSON.stringify({ peso, talla, edad })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                setError(data.message);
+                return;
+            }
+
+            const idGenerado = `DATOS-${Math.floor(1000 + Math.random() * 9000)}`;
+            setIdDatosGenerado(idGenerado);
+            setGuardadoExitoso(true);
+
+        } catch (err) {
+            setError("No se pudo conectar con el servidor.");
+        }
     };
 
     return (
@@ -76,11 +87,10 @@ const DatosUsuario = () => {
                     <>
                         <h4 className="fw-bold mb-1 text-start card-title">Perfil Corporal</h4>
                         <p className="text-start mb-4 card-subtitle">
-                            Ingrese sus mediciones obligatorias para calibrar los algoritmos de entrenamiento.
+                            Ingrese sus mediciones para calibrar los algoritmos de entrenamiento.
                         </p>
 
                         <form onSubmit={handleSubmit}>
-                            {/* Peso */}
                             <div className="mb-3 text-start">
                                 <label className="form-label fw-semibold text-label">Peso (kg)</label>
                                 <div className="input-group">
@@ -90,11 +100,16 @@ const DatosUsuario = () => {
                                             <path d="M8 4a3 3 0 0 1 2.599 4.5H5.4A3 3 0 0 1 8 4m1.024 2.633L9.4 5.7a.2.2 0 0 0-.36-.173l-.473.879A2 2 0 0 0 8 6a2 2 0 1 0 1.024.633" />
                                         </svg>
                                     </span>
-                                    <input className="form-control glass-input" type="number" step="0.1" placeholder="Ej. 72.5" value={peso} onChange={handlePesoChange} required />
+                                    <input
+                                        className="form-control glass-input"
+                                        type="number" step="0.1" placeholder="Ej. 72.5"
+                                        value={peso}
+                                        onChange={(e) => setPeso(e.currentTarget.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
 
-                            {/* Talla */}
                             <div className="mb-3 text-start">
                                 <label className="form-label fw-semibold text-label">Talla (cm)</label>
                                 <div className="input-group">
@@ -103,11 +118,16 @@ const DatosUsuario = () => {
                                             <path d="M8 0a.5.5 0 0 1 .354.146l3 3a.5.5 0 0 1-.708.708L8.5 1.707v12.586l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 .708-.708L7.5 14.293V1.707L5.354 3.854a.5.5 0 1 1-.708-.708l3-3A.5.5 0 0 1 8 0" />
                                         </svg>
                                     </span>
-                                    <input className="form-control glass-input" type="number" placeholder="Ej. 175" value={talla} onChange={handleTallaChange} required />
+                                    <input
+                                        className="form-control glass-input"
+                                        type="number" placeholder="Ej. 175"
+                                        value={talla}
+                                        onChange={(e) => setTalla(e.currentTarget.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
 
-                            {/* Edad */}
                             <div className="mb-3 text-start">
                                 <label className="form-label fw-semibold text-label">Edad (años)</label>
                                 <div className="input-group">
@@ -116,11 +136,16 @@ const DatosUsuario = () => {
                                             <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1zm13 3H1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1z" />
                                         </svg>
                                     </span>
-                                    <input className="form-control glass-input" type="number" placeholder="Ej. 26" value={edad} onChange={handleEdadChange} required />
+                                    <input
+                                        className="form-control glass-input"
+                                        type="number" placeholder="Ej. 26"
+                                        value={edad}
+                                        onChange={(e) => setEdad(e.currentTarget.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
 
-                            {/* IMC en vivo */}
                             {imc !== null && (
                                 <div className="imc-box d-flex justify-content-between align-items-center my-4">
                                     <span className="fw-semibold text-label-sm">IMC Estimado</span>
@@ -129,45 +154,6 @@ const DatosUsuario = () => {
                                     </span>
                                 </div>
                             )}
-
-                            {/* Complexión */}
-                            <div className="mb-4 text-start">
-                                <label className="form-label fw-semibold text-label">Complexión</label>
-                                <div className="d-flex gap-2">
-                                    {(["ectomorfo", "mesomorfo", "endomorfo"] as Complexion[]).map((val) => (
-                                        <button
-                                            key={val}
-                                            type="button"
-                                            onClick={() => setComplexion(val)}
-                                            className={`btn flex-fill py-2 text-capitalize btn-option${complexion === val ? " active" : ""}`}
-                                        >
-                                            {val}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Objetivo */}
-                            <div className="mb-4 text-start">
-                                <label className="form-label fw-semibold text-label">Objetivo Personal</label>
-                                <div className="d-flex flex-column gap-2">
-                                    {([
-                                        ["bajar_peso", "Reducción de peso"],
-                                        ["mantener_peso", "Mantenimiento físico"],
-                                        ["ganar_musculo", "Ganancia de masa muscular"]
-                                    ] as [Objetivo, string][]).map(([val, label]) => (
-                                        <button
-                                            key={val}
-                                            type="button"
-                                            onClick={() => setObjetivo(val)}
-                                            className={`btn text-start py-2 px-3 btn-option${objetivo === val ? " active" : ""}`}
-                                            style={{ fontSize: "0.85rem" }}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
 
                             {error && (
                                 <div className="alert-glass-error mb-3 text-start">{error}</div>
@@ -186,14 +172,12 @@ const DatosUsuario = () => {
                             </svg>
                         </div>
                         <h4 className="fw-bold mb-2 card-title">Mediciones registradas</h4>
-                        <p style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: "0.88rem", lineHeight: "1.5" }}>
+                        <p style={{ color: "rgba(255, 255, 255, 0.75)", fontSize: "0.88rem" }}>
                             Datos guardados correctamente.
                         </p>
 
                         <div className="alert-glass-info my-3">
-                            <span className="d-block text-muted" style={{ fontSize: "0.78rem" }}>
-                                Identificador único asignado:
-                            </span>
+                            <span className="d-block text-muted" style={{ fontSize: "0.78rem" }}>Identificador único asignado:</span>
                             <div className="font-monospace fw-bold mt-1 text-white" style={{ fontSize: "1.1rem" }}>
                                 ID: {idDatosGenerado}
                             </div>
@@ -204,7 +188,6 @@ const DatosUsuario = () => {
                             <div>• Peso corporal: {peso} kg</div>
                             <div>• Talla corporal: {talla} cm</div>
                             <div>• Edad actual: {edad} años</div>
-                            <div className="text-capitalize">• Complexión física: {complexion}</div>
                             <div>• IMC calculado: {imc ? imc.toFixed(1) : ""} ({imcTexto})</div>
                         </div>
 

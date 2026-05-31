@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-type Complexion = "ectomorfo" | "mesomorfo" | "endomorfo";
-type Objetivo = "bajar_peso" | "mantener_peso" | "ganar_musculo";
+const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
+
 type Ambiente = "casa" | "gimnasio" | "aire_libre";
 
 interface PerfilData {
@@ -11,15 +11,19 @@ interface PerfilData {
   peso: string;
   talla: string;
   edad: string;
-  complexion: Complexion;
-  objetivo: Objetivo;
-  entorno: Ambiente;
+  identorno: number;
 }
 
-const OBJETIVOS: Record<Objetivo, string> = {
-  bajar_peso: "Reducción de peso",
-  mantener_peso: "Mantenimiento físico",
-  ganar_musculo: "Ganancia de masa muscular",
+const ENTORNO_ID: Record<Ambiente, number> = {
+  casa: 1,
+  gimnasio: 2,
+  aire_libre: 3,
+};
+
+const ENTORNO_NOMBRE: Record<number, Ambiente> = {
+  1: "casa",
+  2: "gimnasio",
+  3: "aire_libre",
 };
 
 const ENTORNOS: Record<Ambiente, string> = {
@@ -38,29 +42,39 @@ const PerfilUsuario = () => {
   const navigate = useNavigate();
 
   const [datos, setDatos] = useState<PerfilData>({
-    nombre: "", correo: "", peso: "", talla: "", edad: "",
-    complexion: "mesomorfo", objetivo: "bajar_peso", entorno: "casa",
+    nombre: "", correo: "", peso: "", talla: "", edad: "", identorno: 1,
   });
 
   const [editando, setEditando] = useState(false);
   const [guardadoExitoso, setGuardadoExitoso] = useState(false);
   const [error, setError] = useState("");
 
+  // Cargar perfil desde el backend
   useEffect(() => {
-    const usuario = JSON.parse(localStorage.getItem("athlos_usuario") || "{}");
-    const datosFisicos = JSON.parse(localStorage.getItem("athlos_datos") || "{}");
-    const entorno = JSON.parse(localStorage.getItem("athlos_entorno") || "{}");
-
-    setDatos({
-      nombre: usuario.nombre || "",
-      correo: usuario.correo || "",
-      peso: datosFisicos.peso || "",
-      talla: datosFisicos.talla || "",
-      edad: datosFisicos.edad || "",
-      complexion: datosFisicos.complexion || "mesomorfo",
-      objetivo: datosFisicos.objetivo || "bajar_peso",
-      entorno: entorno.ambiente || "casa",
-    });
+    const cargarPerfil = async () => {
+      try {
+        const response = await fetch(`${URL_BACKEND}/api/user/profile`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("athlos_token")}`
+          }
+        });
+        const data = await response.json();
+        if (data.success) {
+          const u = data.data;
+          setDatos({
+            nombre: u.nombre || "",
+            correo: u.email || "",
+            peso: u.peso?.toString() || "",
+            talla: u.talla?.toString() || "",
+            edad: u.edad?.toString() || "",
+            identorno: u.identorno || 1,
+          });
+        }
+      } catch (err) {
+        setError("No se pudo cargar el perfil.");
+      }
+    };
+    cargarPerfil();
   }, []);
 
   const pesoNum = Number(datos.peso);
@@ -72,24 +86,53 @@ const PerfilUsuario = () => {
     imc < 25 ? "Peso normal" :
     imc < 30 ? "Sobrepeso" : "Obesidad";
 
-  const handleChange = (field: keyof PerfilData, value: string) => {
+  const entornoActual = ENTORNO_NOMBRE[datos.identorno] || "casa";
+
+  const handleChange = (field: keyof PerfilData, value: string | number) => {
     setDatos((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     setError("");
     if (!datos.nombre || !datos.correo) { setError("El nombre y el correo son obligatorios."); return; }
     if (datos.peso && (Number(datos.peso) < 20 || Number(datos.peso) > 400)) { setError("El peso debe estar entre 20 y 400 kg."); return; }
     if (datos.talla && (Number(datos.talla) < 80 || Number(datos.talla) > 260)) { setError("La talla debe estar entre 80 y 260 cm."); return; }
     if (datos.edad && (Number(datos.edad) < 10 || Number(datos.edad) > 120)) { setError("La edad debe estar entre 10 y 120 años."); return; }
 
-    localStorage.setItem("athlos_usuario", JSON.stringify({ nombre: datos.nombre, correo: datos.correo }));
-    localStorage.setItem("athlos_datos", JSON.stringify({ peso: datos.peso, talla: datos.talla, edad: datos.edad, complexion: datos.complexion, objetivo: datos.objetivo }));
-    localStorage.setItem("athlos_entorno", JSON.stringify({ ambiente: datos.entorno }));
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("athlos_token")}`
+      };
 
-    setEditando(false);
-    setGuardadoExitoso(true);
-    setTimeout(() => setGuardadoExitoso(false), 3000);
+      // Actualizar datos físicos
+      const resProfile = await fetch(`${URL_BACKEND}/api/user/profile`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ nombre: datos.nombre, email: datos.correo, peso: datos.peso, talla: datos.talla, edad: datos.edad })
+      });
+
+      // Actualizar entorno
+      const resEntorno = await fetch(`${URL_BACKEND}/api/user/environment`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ identorno: datos.identorno })
+      });
+
+      const dataProfile = await resProfile.json();
+      const dataEntorno = await resEntorno.json();
+
+      if (!dataProfile.success || !dataEntorno.success) {
+        setError(dataProfile.message || dataEntorno.message);
+        return;
+      }
+
+      setEditando(false);
+      setGuardadoExitoso(true);
+      setTimeout(() => setGuardadoExitoso(false), 3000);
+    } catch (err) {
+      setError("No se pudo conectar con el servidor.");
+    }
   };
 
   return (
@@ -197,51 +240,8 @@ const PerfilUsuario = () => {
           </div>
         )}
 
-        {/* Complexión */}
-        <div className="mb-4 text-start">
-          <label className="form-label fw-semibold text-label-sm">Complexión</label>
-          {editando ? (
-            <div className="d-flex gap-2">
-              {(["ectomorfo", "mesomorfo", "endomorfo"] as Complexion[]).map((val) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => handleChange("complexion", val)}
-                  className={`btn flex-fill py-2 text-capitalize btn-option${datos.complexion === val ? " active" : ""}`}
-                  style={{ fontSize: "0.78rem" }}
-                >
-                  {val}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="data-display text-capitalize">{datos.complexion || "Sin datos"}</div>
-          )}
-        </div>
-
-        {/* ── SECCIÓN 3: Objetivo y Entorno ── */}
-        <p className="fw-semibold mb-3 section-label divider-top">Objetivo y entorno</p>
-
-        <div className="mb-4 text-start">
-          <label className="form-label fw-semibold text-label-sm">Objetivo personal</label>
-          {editando ? (
-            <div className="d-flex flex-column gap-2">
-              {(Object.entries(OBJETIVOS) as [Objetivo, string][]).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => handleChange("objetivo", val)}
-                  className={`btn text-start py-2 px-3 btn-option${datos.objetivo === val ? " active" : ""}`}
-                  style={{ fontSize: "0.85rem" }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="data-display">{OBJETIVOS[datos.objetivo] || "Sin datos"}</div>
-          )}
-        </div>
+        {/* ── SECCIÓN 3: Entorno ── */}
+        <p className="fw-semibold mb-3 section-label divider-top">Entorno</p>
 
         <div className="mb-4 text-start">
           <label className="form-label fw-semibold text-label-sm">Entorno de entrenamiento</label>
@@ -251,11 +251,11 @@ const PerfilUsuario = () => {
                 <button
                   key={val}
                   type="button"
-                  onClick={() => handleChange("entorno", val)}
-                  className={`btn flex-fill d-flex flex-column align-items-center gap-1 py-3 px-1 btn-option btn-option-env${datos.entorno === val ? " active" : ""}`}
+                  onClick={() => handleChange("identorno", ENTORNO_ID[val])}
+                  className={`btn flex-fill d-flex flex-column align-items-center gap-1 py-3 px-1 btn-option btn-option-env${entornoActual === val ? " active" : ""}`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                    <path d={ENTORNO_ICONOS[val as Ambiente]} />
+                    <path d={ENTORNO_ICONOS[val]} />
                   </svg>
                   <span style={{ fontSize: "0.75rem" }}>{label}</span>
                 </button>
@@ -264,17 +264,15 @@ const PerfilUsuario = () => {
           ) : (
             <div className="data-display d-flex align-items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#74C3D2" viewBox="0 0 16 16">
-                <path d={ENTORNO_ICONOS[datos.entorno]} />
+                <path d={ENTORNO_ICONOS[entornoActual]} />
               </svg>
-              <span>{ENTORNOS[datos.entorno] || "Sin datos"}</span>
+              <span>{ENTORNOS[entornoActual] || "Sin datos"}</span>
             </div>
           )}
         </div>
 
         {/* Error */}
-        {error && (
-          <div className="alert-glass-error mb-3">{error}</div>
-        )}
+        {error && <div className="alert-glass-error mb-3">{error}</div>}
 
         {/* Éxito */}
         {guardadoExitoso && (

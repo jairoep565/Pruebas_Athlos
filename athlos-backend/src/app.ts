@@ -3,10 +3,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import './config/db';
 
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import { authMiddleware } from './middlewares/auth.middleware';
+
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5432;
+const PORT = process.env.PORT || 3000;
 
 // Middlewares globales
 app.use(cors());
@@ -16,6 +20,12 @@ app.use(express.json());
 app.get('/', (_req, res) => {
   res.json({ message: '🏋️ Athlos API funcionando correctamente' });
 });
+
+// Rutas públicas (sin JWT)
+app.use('/api/auth', authRoutes);
+
+// Rutas privadas (con JWT)
+app.use('/api/user', authMiddleware, userRoutes);
 
 // Arrancar servidor
 app.listen(PORT, () => {
