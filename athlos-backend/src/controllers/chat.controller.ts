@@ -155,7 +155,6 @@ export const sendMessage = async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     const mensaje = String(req.body?.mensaje || req.body?.message || '').trim();
-    const historialBody = Array.isArray(req.body?.historial) ? req.body.historial : [];
 
     if (!userId) {
       return res.status(401).json({
@@ -171,44 +170,34 @@ export const sendMessage = async (req: Request, res: Response) => {
       });
     }
 
-    const [user, exercises] = await Promise.all([
+    // Cargar historial desde BD + perfil y catálogo en paralelo
+    const [history, user, exercises] = await Promise.all([
+      getChatHistoryByUserId(userId),   // ← contexto real desde BD
       getUserProfileById(userId),
       getExerciseCatalog(),
     ]);
 
-    const history: ChatMessage[] = historialBody
-      .filter((message: Partial<ChatMessage>) => {
-        return (
-          (message.sender === 'user' || message.sender === 'athlos') &&
-          typeof message.text === 'string'
-        );
-      })
-      .map((message: Partial<ChatMessage>) => ({
-        sender: message.sender as 'user' | 'athlos',
-        text: message.text || '',
-        timestamp: message.timestamp || new Date().toISOString(),
-      }));
-
     const respuesta = await askGemini(
-      history,
+      history,          // ← historial persistido, no del body
       mensaje,
       buildSystemPrompt(user, exercises)
     );
 
     const now = new Date().toISOString();
-    const mensajes: ChatMessage[] = [
+    const mensajesNuevos: ChatMessage[] = [
       ...history,
       { sender: 'user', text: mensaje, timestamp: now },
       { sender: 'athlos', text: respuesta, timestamp: now },
     ];
 
-    await saveChatHistoryByUserId(userId, mensajes);
+    // Guardar los 2 mensajes nuevos en la BD
+    await saveChatHistoryByUserId(userId, mensajesNuevos);
 
     return res.status(200).json({
       success: true,
       data: {
         respuesta,
-        mensajes,
+        mensajes: mensajesNuevos,
         usuario: user,
         ejerciciosDisponibles: exercises.length,
       },
