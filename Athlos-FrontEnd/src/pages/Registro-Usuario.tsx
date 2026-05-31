@@ -16,7 +16,6 @@ const RegistroUsuario = () => {
     const [mostrarModalTerminos, setMostrarModalTerminos] = useState<boolean>(false);
     const [codigoIngresado, setCodigoIngresado] = useState<string>("");
     const [errorVerificacion, setErrorVerificacion] = useState<string>("");
-    const [codigoSimulado, setCodigoSimulado] = useState<string>("");
 
     const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.currentTarget.value);
     const handleCorreoChange = (e: React.ChangeEvent<HTMLInputElement>) => setCorreo(e.currentTarget.value);
@@ -52,7 +51,6 @@ const RegistroUsuario = () => {
                 setError(data.message);
                 return;
             }
-            setCodigoSimulado(data.codigoSimulado);
             setRegistroExitoso(true);
         } catch (err) {
             setError("No se pudo conectar con el servidor.");
@@ -239,13 +237,12 @@ const RegistroUsuario = () => {
                         </p>
 
                         <div className="alert-glass-info my-3">
-                            <small className="d-block fw-semibold mb-1 text-teal">[Simulador de Correo Electrónico]</small>
+                            <small className="d-block fw-semibold mb-1 text-teal">
+                                Verificación por correo
+                            </small>
                             <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.8rem" }}>
-                                Hemos simulado el envío de un código de verificación a su bandeja:
+                                Hemos enviado un código de verificación a tu correo. Ingrésalo abajo para continuar.
                             </span>
-                            <div className="mt-2 text-center py-2 rounded bg-black bg-opacity-20 font-monospace fw-bold" style={{ fontSize: "1.2rem", color: "#fcd385", letterSpacing: "2px" }}>
-                                {codigoSimulado}
-                            </div>
                         </div>
 
                         <form onSubmit={handleVerifySubmit} className="mt-4">

@@ -6,6 +6,7 @@ import {
     generateToken,
     generateVerificationCode,
 } from "../services/auth.service";
+import { sendVerificationCode } from "../services/email.service";
 
 // Códigos temporales en memoria
 const verificationCodes = new Map<string, string>();
@@ -36,12 +37,12 @@ export const register = async (req: Request, res: Response) => {
         // Generar código de verificación
         const codigo = generateVerificationCode();
         verificationCodes.set(email, codigo);
-        console.log(`Código de verificación para ${email}: ${codigo}`);
+
+        await sendVerificationCode(email, codigo);
 
         return res.status(201).json({
-            success: true,
-            message: "Usuario creado correctamente.",
-            codigoSimulado: codigo, // solo en desarrollo
+        success: true,
+        message: "Usuario creado correctamente. Revisa tu correo para verificar tu cuenta.",
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Error interno del servidor." });
