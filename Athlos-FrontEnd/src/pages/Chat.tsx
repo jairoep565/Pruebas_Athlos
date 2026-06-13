@@ -50,7 +50,7 @@ const Chat: React.FC = () => {
             peso: u.peso?.toString() || "",
             talla: u.talla?.toString() || "",
             edad: u.edad?.toString() || "",
-            entorno: u.identorno === 1 ? "casa" : u.identorno === 2 ? "gimnasio" : "aire_libre",
+            entorno: u.identorno === 1 ? "casa" : u.identorno === 3 ? "gimnasio" : "aire_libre",
             idusuario: u.idusuario || 1,
           });
         }
