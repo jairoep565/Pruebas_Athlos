@@ -2,6 +2,13 @@ import db from '../config/db';
 import { getExerciseCatalogForPlan, IExerciseCatalogForPlan } from '../models/Exercise.model';
 import { getUserProfileById, UserProfile } from '../models/Chat.model';
 
+export class GeminiQuotaError extends Error {
+  constructor(public readonly retryAfterSeconds: number) {
+    super('La cuota gratuita de Gemini se agotó temporalmente.');
+    this.name = 'GeminiQuotaError';
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════
 //  Interfaces: Respuesta de Gemini (lo que la IA devuelve)
 // ══════════════════════════════════════════════════════════════════════
@@ -61,6 +68,154 @@ export interface SavedPlan {
   diasPorSemana: number;
   rutinas: SavedRutina[];
 }
+
+export interface StoredPlanSummary {
+  idplan: number;
+  nombre: string;
+  fechaCreacion: string;
+  duracionSemanas: number;
+  diasPorSemana: number;
+  totalEjercicios: number;
+}
+
+export interface StoredPlanDetail extends StoredPlanSummary {
+  rutinas: Array<{
+    idrutina: number;
+    nombre: string;
+    duracion: number;
+    estado: string;
+    ejercicios: Array<{
+      idejercicio: number;
+      nombre: string;
+      descripcion: string;
+      series: number;
+      repeticiones: number;
+    }>;
+  }>;
+}
+
+export const getPlansByUserId = async (userId: number): Promise<StoredPlanSummary[]> => {
+  const result = await db.query(
+    `SELECT
+       p.idplan,
+       p.nombreplan AS nombre,
+       p.fechageneracion AS "fechaCreacion",
+       COALESCE(NULLIF(regexp_replace(p.duracion, '[^0-9]', '', 'g'), ''), '0')::int AS "duracionSemanas",
+       COUNT(DISTINCT r.idrutina)::int AS "diasPorSemana",
+       COUNT(re.idejercicio)::int AS "totalEjercicios"
+     FROM plan p
+     LEFT JOIN rutina r ON r.idplan = p.idplan
+     LEFT JOIN rutinaejercicio re ON re.idrutina = r.idrutina
+     WHERE p.idusuario = $1
+     GROUP BY p.idplan, p.nombreplan, p.fechageneracion, p.duracion
+     ORDER BY p.fechageneracion DESC, p.idplan DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getPlanByIdForUser = async (
+  planId: number,
+  userId: number
+): Promise<StoredPlanDetail | null> => {
+  const planResult = await db.query(
+    `SELECT
+       p.idplan,
+       p.nombreplan AS nombre,
+       p.fechageneracion AS "fechaCreacion",
+       COALESCE(NULLIF(regexp_replace(p.duracion, '[^0-9]', '', 'g'), ''), '0')::int AS "duracionSemanas"
+     FROM plan p
+     WHERE p.idplan = $1 AND p.idusuario = $2`,
+    [planId, userId]
+  );
+  if (planResult.rowCount === 0) return null;
+
+  const rows = await db.query(
+    `SELECT
+       r.idrutina,
+       r.nombre AS "rutinaNombre",
+       r.duracion AS "rutinaDuracion",
+       r.estado::text AS estado,
+       e.idejercicio,
+       e.nombre AS "ejercicioNombre",
+       COALESCE(e.descripcion, '') AS descripcion,
+       re.series,
+       re.repeticiones
+     FROM rutina r
+     LEFT JOIN rutinaejercicio re ON re.idrutina = r.idrutina
+     LEFT JOIN ejercicio e ON e.idejercicio = re.idejercicio
+     WHERE r.idplan = $1
+     ORDER BY r.idrutina, e.idejercicio`,
+    [planId]
+  );
+
+  const routines = new Map<number, StoredPlanDetail['rutinas'][number]>();
+  for (const row of rows.rows) {
+    if (!routines.has(row.idrutina)) {
+      routines.set(row.idrutina, {
+        idrutina: row.idrutina,
+        nombre: row.rutinaNombre,
+        duracion: row.rutinaDuracion || 0,
+        estado: row.estado,
+        ejercicios: [],
+      });
+    }
+    if (row.idejercicio) {
+      routines.get(row.idrutina)!.ejercicios.push({
+        idejercicio: row.idejercicio,
+        nombre: row.ejercicioNombre,
+        descripcion: row.descripcion,
+        series: row.series,
+        repeticiones: row.repeticiones,
+      });
+    }
+  }
+
+  const plan = planResult.rows[0];
+  const rutinas = Array.from(routines.values());
+  return {
+    ...plan,
+    diasPorSemana: rutinas.length,
+    totalEjercicios: rutinas.reduce((total, rutina) => total + rutina.ejercicios.length, 0),
+    rutinas,
+  };
+};
+
+export const deletePlansByUserId = async (
+  planIds: number[],
+  userId: number
+): Promise<number[]> => {
+  return db.transaction(async (client) => {
+    const ownedPlans = await client.query<{ idplan: number }>(
+      `SELECT idplan
+       FROM plan
+       WHERE idusuario = $1 AND idplan = ANY($2::int[])
+       ORDER BY idplan`,
+      [userId, planIds]
+    );
+
+    if (ownedPlans.rowCount !== planIds.length) {
+      throw new Error('PLAN_NOT_FOUND');
+    }
+
+    await client.query(
+      `DELETE FROM rutinaejercicio
+       WHERE idrutina IN (
+         SELECT idrutina FROM rutina WHERE idplan = ANY($1::int[])
+       )`,
+      [planIds]
+    );
+    await client.query('DELETE FROM rutina WHERE idplan = ANY($1::int[])', [planIds]);
+    const deleted = await client.query<{ idplan: number }>(
+      `DELETE FROM plan
+       WHERE idusuario = $1 AND idplan = ANY($2::int[])
+       RETURNING idplan`,
+      [userId, planIds]
+    );
+
+    return deleted.rows.map((plan) => plan.idplan);
+  });
+};
 
 // ══════════════════════════════════════════════════════════════════════
 //  Schema de Gemini (con rutinas → ejercicios)
@@ -385,6 +540,21 @@ export const generateTrainingPlan = async (userId: string): Promise<SavedPlan> =
     if (!response.ok) {
       const body = await response.text();
       console.error('[Gemini API Error] Status:', response.status, 'Body:', body);
+      if (response.status === 429) {
+        let retryAfterSeconds = 60;
+        try {
+          const parsed = JSON.parse(body) as {
+            error?: { details?: Array<{ retryDelay?: string }> };
+          };
+          const retryDelay = parsed.error?.details?.find((detail) => detail.retryDelay)?.retryDelay;
+          const seconds = Number.parseFloat(retryDelay || '');
+          if (Number.isFinite(seconds) && seconds > 0) retryAfterSeconds = Math.ceil(seconds);
+        } catch {
+          const match = body.match(/retry in\s+([0-9.]+)s/i);
+          if (match) retryAfterSeconds = Math.ceil(Number(match[1]));
+        }
+        throw new GeminiQuotaError(retryAfterSeconds);
+      }
       throw new Error(`Gemini respondio ${response.status}: ${body}`);
     }
 

@@ -603,6 +603,16 @@ body {
 .plan-progress-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #74c3d2, #4a90e2); transition: width 0.45s ease; }
 .plan-list-card, .exercise-card { width: 100%; padding: 20px; color: #fff; text-align: left; background: rgba(20, 26, 40, 0.58); border: 1px solid rgba(116, 195, 210, 0.2); border-radius: 16px; transition: 0.2s ease; }
 .plan-list-card:hover, .exercise-card:hover, .exercise-card-open { border-color: rgba(116, 195, 210, 0.55); background: rgba(116, 195, 210, 0.09); transform: translateY(-2px); }
+.plan-list-card-selected { border-color: rgba(255, 93, 115, 0.8); background: rgba(255, 75, 101, 0.12); }
+.plan-list-card-selected:hover { border-color: rgba(255, 93, 115, 0.95); background: rgba(255, 75, 101, 0.16); }
+.plan-selection-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.plan-delete-button, .plan-delete-confirm { color: #fff; border: 1px solid rgba(255, 93, 115, 0.55); background: rgba(255, 75, 101, 0.16); }
+.plan-delete-button:hover, .plan-delete-confirm:hover { color: #fff; border-color: rgba(255, 93, 115, 0.9); background: rgba(255, 75, 101, 0.28); }
+.plan-delete-button:disabled { opacity: 0.45; }
+.plan-delete-confirm { background: #dc3545; border-color: #dc3545; }
+.plan-selection-box { display: grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 7px; color: #fff; font-weight: 800; }
+.plan-selection-box-active { border-color: #ff647a; background: #dc3545; }
+.plan-delete-modal { width: min(420px, calc(100% - 32px)); padding: 26px; }
 .plan-arrow, .exercise-toggle { color: #74c3d2; font-size: 1.8rem; line-height: 1; }
 .plan-exercise-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .exercise-details { color: rgba(255, 255, 255, 0.72); font-size: 0.86rem; border-top: 1px solid rgba(255, 255, 255, 0.08); }
