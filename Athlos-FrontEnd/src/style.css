@@ -593,6 +593,27 @@ body {
   color: #ffffff;
 }
 
+/* Planes locales */
+.plan-page { justify-content: flex-start; min-height: 100vh; padding: 1rem 0; }
+.plan-shell { width: 100%; max-width: 420px; }
+.plan-eyebrow { color: #74c3d2; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; }
+.plan-loader { width: 74px; height: 74px; border: 5px solid rgba(116, 195, 210, 0.15); border-top-color: #74c3d2; border-radius: 50%; animation: planSpin 0.85s linear infinite; }
+@keyframes planSpin { to { transform: rotate(360deg); } }
+.plan-progress { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
+.plan-progress-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #74c3d2, #4a90e2); transition: width 0.45s ease; }
+.plan-list-card, .exercise-card { width: 100%; padding: 20px; color: #fff; text-align: left; background: rgba(20, 26, 40, 0.58); border: 1px solid rgba(116, 195, 210, 0.2); border-radius: 16px; transition: 0.2s ease; }
+.plan-list-card:hover, .exercise-card:hover, .exercise-card-open { border-color: rgba(116, 195, 210, 0.55); background: rgba(116, 195, 210, 0.09); transform: translateY(-2px); }
+.plan-arrow, .exercise-toggle { color: #74c3d2; font-size: 1.8rem; line-height: 1; }
+.plan-exercise-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.exercise-details { color: rgba(255, 255, 255, 0.72); font-size: 0.86rem; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+@media (max-width: 480px) {
+  body { padding: 0 12px; align-items: flex-start; }
+  .plan-page { padding: 14px 0 24px; }
+  .plan-page .glass-card { padding: 20px 18px; border-radius: 16px; }
+  .plan-list-card, .exercise-card { padding: 16px; border-radius: 14px; }
+  .plan-page .page-title { font-size: 1.45rem; }
+}
+
 .chat-bubble-user {
   background: linear-gradient(135deg, rgba(116, 195, 210, 0.22) 0%, rgba(74, 144, 226, 0.22) 100%);
   border: 1px solid rgba(116, 195, 210, 0.35);

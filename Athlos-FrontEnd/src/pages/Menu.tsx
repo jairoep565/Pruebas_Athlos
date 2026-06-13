@@ -1,10 +1,29 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
   const navigate = useNavigate();
 
   const menuItems = [
+    {
+      label: "Generar Plan",
+      description: "Crea un entrenamiento personalizado con IA",
+      route: "/GenerarPlan",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 1a.5.5 0 0 1 .5.5V7H14a.5.5 0 0 1 0 1H8.5v5.5a.5.5 0 0 1-1 0V8H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1" />
+        </svg>
+      )
+    },
+    {
+      label: "Mis Planes",
+      description: "Revisa todos tus planes de entrenamiento",
+      route: "/MisPlanes",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M3 1.5A1.5 1.5 0 0 1 4.5 0h7A1.5 1.5 0 0 1 13 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 14.5zM5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1z" />
+        </svg>
+      )
+    },
     {
       label: "Chat con Athlos",
       description: "Tu entrenadora con inteligencia artificial",

@@ -15,6 +15,9 @@ import RecuperarContrasena from "./pages/recuperar-contrasena";
 import PerfilUsuario from "./pages/Perfil";
 import Menu from "./pages/Menu";
 import Chat from "./pages/Chat";
+import GenerarPlan from "./pages/Generar-Plan";
+import MisPlanes from "./pages/Mis-Planes";
+import DetallePlan from "./pages/Detalle-Plan";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -36,6 +39,9 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/Perfil" element={<PerfilUsuario />} />
         <Route path="/Menu" element={<Menu />} />
         <Route path="/Chat" element={<Chat />} />
+        <Route path="/GenerarPlan" element={<GenerarPlan />} />
+        <Route path="/MisPlanes" element={<MisPlanes />} />
+        <Route path="/MisPlanes/:planId" element={<DetallePlan />} />
       </Routes>
     </Router>
   </StrictMode>
