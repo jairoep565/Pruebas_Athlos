@@ -17,6 +17,7 @@ import Chat from "./pages/Chat";
 import GenerarPlan from "./pages/Generar-Plan";
 import MisPlanes from "./pages/Mis-Planes";
 import DetallePlan from "./pages/Detalle-Plan";
+import PlanAlimentacion from "./pages/Plan-Alimentacion";
 
 createRoot(document.getElementById("root")!).render(
   <Router>
@@ -39,6 +40,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/GenerarPlan" element={<GenerarPlan />} />
       <Route path="/MisPlanes" element={<MisPlanes />} />
       <Route path="/MisPlanes/:planId" element={<DetallePlan />} />
+      <Route path="/PlanAlimentacion" element={<PlanAlimentacion />} />
     </Routes>
   </Router>
 );

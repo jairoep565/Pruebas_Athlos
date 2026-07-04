@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import chatRoutes from './routes/chat.routes';
 import planRoutes from './routes/plan.routes';
+import planAlimenticioRoutes from './routes/planAlimenticio.routes';
 import { authMiddleware } from './middlewares/auth.middleware';
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/chat', chatRoutes);
 // Rutas privadas (con JWT)
 app.use('/api/user', authMiddleware, userRoutes);
 app.use('/api/plans', authMiddleware, planRoutes);
+app.use('/api/plan-alimenticio', authMiddleware, planAlimenticioRoutes);
 
 // Arrancar servidor
 app.listen(PORT, () => {

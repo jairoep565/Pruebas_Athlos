@@ -820,3 +820,186 @@ body {
   0% { width: 100%; }
   100% { width: 0%; }
 }
+
+/* ─────────────────────────────────────────
+   PLAN DE ALIMENTACIÓN / NUTRICIÓN
+───────────────────────────────────────── */
+
+/* Big icon for empty state */
+.nutricion-icon-big {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(116, 195, 210, 0.12);
+  border: 1px solid rgba(116, 195, 210, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Macros summary grid */
+.nutricion-macros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.nutricion-macro-card {
+  background: rgba(20, 26, 40, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 14px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+}
+
+.nutricion-macro-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.nutricion-macro-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.nutricion-macro-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Colored macro accents */
+.nutricion-macro-calorias {
+  border-color: rgba(252, 211, 133, 0.3);
+  background: rgba(252, 211, 133, 0.06);
+}
+.nutricion-macro-calorias .nutricion-macro-value {
+  color: #fcd385;
+}
+
+.nutricion-macro-proteinas {
+  border-color: rgba(116, 195, 210, 0.3);
+  background: rgba(116, 195, 210, 0.06);
+}
+.nutricion-macro-proteinas .nutricion-macro-value {
+  color: #74c3d2;
+}
+
+.nutricion-macro-carbos {
+  border-color: rgba(167, 139, 250, 0.3);
+  background: rgba(167, 139, 250, 0.06);
+}
+.nutricion-macro-carbos .nutricion-macro-value {
+  color: #a78bfa;
+}
+
+.nutricion-macro-grasas {
+  border-color: rgba(251, 146, 60, 0.3);
+  background: rgba(251, 146, 60, 0.06);
+}
+.nutricion-macro-grasas .nutricion-macro-value {
+  color: #fb923c;
+}
+
+/* Comidas grid */
+.nutricion-comidas-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* Comida card */
+.nutricion-comida-card {
+  width: 100%;
+  padding: 16px;
+  color: #fff;
+  text-align: left;
+  background: rgba(20, 26, 40, 0.5);
+  border: 1px solid rgba(116, 195, 210, 0.15);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.nutricion-comida-card:hover,
+.nutricion-comida-card-open {
+  border-color: rgba(116, 195, 210, 0.45);
+  background: rgba(116, 195, 210, 0.07);
+}
+
+.nutricion-comida-tipo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #74c3d2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Macro badges with subtle colors */
+.nutricion-badge-prot {
+  border-color: rgba(116, 195, 210, 0.25) !important;
+  color: #74c3d2 !important;
+}
+.nutricion-badge-carb {
+  border-color: rgba(167, 139, 250, 0.25) !important;
+  color: #a78bfa !important;
+}
+.nutricion-badge-gras {
+  border-color: rgba(251, 146, 60, 0.25) !important;
+  color: #fb923c !important;
+}
+
+/* Ingredientes */
+.nutricion-ingredientes {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nutricion-ingredientes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nutricion-ingredientes-list li {
+  padding: 5px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  position: relative;
+  padding-left: 16px;
+}
+
+.nutricion-ingredientes-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #74c3d2;
+  font-weight: bold;
+}
+
+.nutricion-ingredientes-list li:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 480px) {
+  .nutricion-macros-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .nutricion-macro-value {
+    font-size: 1.25rem;
+  }
+  .nutricion-comida-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+}

@@ -25,6 +25,16 @@ const Menu = () => {
       )
     },
     {
+      label: "Plan de Alimentación",
+      description: "Recomendaciones nutricionales con IA",
+      route: "/PlanAlimentacion",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8.5 1a.5.5 0 0 0-1 0v1.5a.5.5 0 0 0 1 0zm3.382 1.025a.5.5 0 0 0-.764.643l.95 1.128a.5.5 0 0 0 .764-.643zM3.882 2.668a.5.5 0 0 0-.764.643l.95 1.128a.5.5 0 1 0 .764-.643zM8 5a4 4 0 0 0-4 4c0 1.397.516 2.27 1.265 3.073C6.013 12.876 7 13.5 7 15h2c0-1.5.987-2.124 1.735-2.927C11.484 11.27 12 10.397 12 9a4 4 0 0 0-4-4m0 1a3 3 0 0 1 3 3c0 1.06-.375 1.665-1.085 2.427C9.269 12.107 8.36 12.84 8.14 14h-.28c-.22-1.16-1.13-1.893-1.775-2.573C5.375 10.665 5 10.06 5 9a3 3 0 0 1 3-3"/>
+        </svg>
+      )
+    },
+    {
       label: "Chat con Athlos",
       description: "Tu entrenadora con inteligencia artificial",
       route: "/Chat",
