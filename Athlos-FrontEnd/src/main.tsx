@@ -19,6 +19,7 @@ import MisPlanes from "./pages/Mis-Planes";
 import DetallePlan from "./pages/Detalle-Plan";
 import PlanAlimentacion from "./pages/Plan-Alimentacion";
 import Desafios from "./pages/Desafios";
+import Tienda from "./pages/Tienda";
 
 createRoot(document.getElementById("root")!).render(
   <Router>
@@ -43,6 +44,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/MisPlanes/:planId" element={<DetallePlan />} />
       <Route path="/PlanAlimentacion" element={<PlanAlimentacion />} />
       <Route path="/Desafios" element={<Desafios />} />
+      <Route path="/Tienda" element={<Tienda />} />
 
     </Routes>
   </Router>
