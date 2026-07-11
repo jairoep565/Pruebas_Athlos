@@ -11,6 +11,8 @@ import {
   sumarPuntosAlUsuario,
   vencerRetosDelUsuario,
 } from '../models/Reto.model';
+import { sumarExperienciaYActualizarRango, ProgresoRango } from '../models/Rango.model';
+
 
 const DIAS_PLAZO = 7;
 const CAMBIOS_POR_DIA = 3;
@@ -122,22 +124,28 @@ export const getChallengesByUserId = async (idUsuario: number): Promise<Challeng
 };
 
 //completa un reto y suma los puntos
-export const completeChallenge = async (idReto: number, idUsuario: number): Promise<Challenge[] | null> => {
+export const completeChallenge = async (
+  idReto: number,
+  idUsuario: number
+): Promise<{ challenges: Challenge[]; progresoRango: ProgresoRango } | null> => {
   const puntosGanados = await marcarCompletado(idReto, idUsuario);
   if (puntosGanados === null) {
-    return null; 
+    return null;
   }
 
   await sumarPuntosAlUsuario(idUsuario, puntosGanados);
+  const progresoRango = await sumarExperienciaYActualizarRango(idUsuario, puntosGanados);
 
-  //generar 5 nuevos retos sino se acabaron
   const pendientes = await contarPendientes(idUsuario);
+  let challenges: Challenge[];
   if (pendientes === 0) {
     await vencerRetosDelUsuario(idUsuario);
-    return generarCincoRetos(idUsuario);
+    challenges = await generarCincoRetos(idUsuario);
+  } else {
+    challenges = await buscarRetosActivos(idUsuario);
   }
 
-  return buscarRetosActivos(idUsuario);
+  return { challenges, progresoRango };
 };
 
 //cambia un reto por otro de la misma dificultad

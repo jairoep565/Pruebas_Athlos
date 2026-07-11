@@ -11,6 +11,8 @@ import planAlimenticioRoutes from './routes/planAlimenticio.routes';
 import challengeRoutes from './routes/challenge.routes';
 import storeRoutes from './routes/store.routes';
 import { authMiddleware } from './middlewares/auth.middleware';
+import rankingRoutes from './routes/ranking.routes';
+
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ app.get('/', (_req, res) => {
 // Rutas públicas (sin JWT)
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/ranking', authMiddleware, rankingRoutes);
+
 
 // Rutas privadas (con JWT)
 app.use('/api/user', authMiddleware, userRoutes);

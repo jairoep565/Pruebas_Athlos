@@ -31,8 +31,8 @@ export const completeChallengeById = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'ID de desafío inválido.' });
     }
 
-    const challenges = await completeChallenge(challengeId, req.user.id);
-    if (challenges === null) {
+    const resultado = await completeChallenge(challengeId, req.user.id);
+    if (resultado === null) {
       return res.status(404).json({ success: false, message: 'Desafío no encontrado, vencido o ya completado.' });
     }
 
@@ -41,7 +41,12 @@ export const completeChallengeById = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: { challenges, puntosTotales, cambiosRestantes },
+      data: {
+        challenges: resultado.challenges,
+        puntosTotales,
+        cambiosRestantes,
+        progresoRango: resultado.progresoRango,
+      },
     });
   } catch (error) {
     console.error('Error completando desafío:', error);

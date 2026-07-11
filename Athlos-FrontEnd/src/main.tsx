@@ -20,6 +20,8 @@ import DetallePlan from "./pages/Detalle-Plan";
 import PlanAlimentacion from "./pages/Plan-Alimentacion";
 import Desafios from "./pages/Desafios";
 import Tienda from "./pages/Tienda";
+import Progreso from "./pages/Progreso";
+
 
 createRoot(document.getElementById("root")!).render(
   <Router>
@@ -45,6 +47,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/PlanAlimentacion" element={<PlanAlimentacion />} />
       <Route path="/Desafios" element={<Desafios />} />
       <Route path="/Tienda" element={<Tienda />} />
+      <Route path="/Progreso" element={<Progreso />} />
 
     </Routes>
   </Router>
