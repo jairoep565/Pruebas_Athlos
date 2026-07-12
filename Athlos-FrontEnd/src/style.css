@@ -601,6 +601,10 @@ body {
 @keyframes planSpin { to { transform: rotate(360deg); } }
 .plan-progress { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
 .plan-progress-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #74c3d2, #4a90e2); transition: width 0.45s ease; }
+.training-days-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.training-day-button { padding: 12px 10px; color: #cbd5e1; background: rgba(20, 26, 40, 0.58); border: 1px solid rgba(116, 195, 210, 0.2); border-radius: 12px; transition: 0.2s ease; }
+.training-day-button:hover { border-color: rgba(116, 195, 210, 0.55); background: rgba(116, 195, 210, 0.09); }
+.training-day-button-selected { color: #0b1521; font-weight: 700; border-color: #74c3d2; background: linear-gradient(135deg, #74c3d2, #4a90e2); }
 .plan-list-card, .exercise-card { width: 100%; padding: 20px; color: #fff; text-align: left; background: rgba(20, 26, 40, 0.58); border: 1px solid rgba(116, 195, 210, 0.2); border-radius: 16px; transition: 0.2s ease; }
 .plan-list-card:hover, .exercise-card:hover, .exercise-card-open { border-color: rgba(116, 195, 210, 0.55); background: rgba(116, 195, 210, 0.09); transform: translateY(-2px); }
 .plan-list-card-selected { border-color: rgba(255, 93, 115, 0.8); background: rgba(255, 75, 101, 0.12); }
@@ -616,12 +620,23 @@ body {
 .plan-arrow, .exercise-toggle { color: #74c3d2; font-size: 1.8rem; line-height: 1; }
 .plan-exercise-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .exercise-details { color: rgba(255, 255, 255, 0.72); font-size: 0.86rem; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.exercise-video-icon { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; margin-left: 12px; color: #0b1521; font-size: 0.85rem; background: #74c3d2; border-radius: 50%; }
+.exercise-modal-overlay { padding: 24px 16px; overflow-y: auto; }
+.exercise-video-modal { width: min(680px, 100%); max-height: calc(100vh - 48px); padding: 28px; overflow-y: auto; }
+.exercise-modal-close { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; padding: 0; color: #fff; font-size: 1.7rem; line-height: 1; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; }
+.exercise-modal-close:hover { color: #0b1521; background: #74c3d2; border-color: #74c3d2; }
+.exercise-video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #05070a; border: 1px solid rgba(116, 195, 210, 0.3); border-radius: 16px; }
+.exercise-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.exercise-video-unavailable { display: grid; min-height: 180px; place-items: center; padding: 24px; color: rgba(255, 255, 255, 0.65); text-align: center; background: rgba(5, 7, 10, 0.55); border: 1px dashed rgba(116, 195, 210, 0.35); border-radius: 16px; }
+.exercise-modal-description { color: rgba(255, 255, 255, 0.76); line-height: 1.65; }
 @media (max-width: 480px) {
   body { padding: 0 12px; align-items: flex-start; }
   .plan-page { padding: 14px 0 24px; }
   .plan-page .glass-card { padding: 20px 18px; border-radius: 16px; }
   .plan-list-card, .exercise-card { padding: 16px; border-radius: 14px; }
   .plan-page .page-title { font-size: 1.45rem; }
+  .exercise-video-modal { max-height: calc(100vh - 24px); padding: 20px 16px; }
+  .exercise-modal-overlay { padding: 12px; }
 }
 
 .chat-bubble-user {

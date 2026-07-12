@@ -11,6 +11,7 @@ export interface EjercicioPlan {
   idejercicio: number;
   nombre: string;
   descripcion: string;
+  link: string;
   series: number;
   repeticiones: number;
 }
