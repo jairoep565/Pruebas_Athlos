@@ -71,10 +71,27 @@ export const generatePlan = async (req: Request, res: Response) => {
       });
     }
 
+    const diasValidos = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const diasEntrenamiento = req.body?.diasEntrenamiento;
+    if (
+      !Array.isArray(diasEntrenamiento) ||
+      diasEntrenamiento.length === 0 ||
+      diasEntrenamiento.length > 7 ||
+      new Set(diasEntrenamiento).size !== diasEntrenamiento.length ||
+      diasEntrenamiento.some((dia) => !diasValidos.includes(dia))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selecciona al menos un día válido para entrenar.',
+      });
+    }
+
+    const diasOrdenados = diasValidos.filter((dia) => diasEntrenamiento.includes(dia));
+
     console.log(`[Plan Controller] userId extraido del JWT: ${userId}`);
 
     // Genera el plan con IA (RAG) y lo persiste en la BD transaccionalmente
-    const savedPlan = await generateTrainingPlan(String(userId));
+    const savedPlan = await generateTrainingPlan(String(userId), diasOrdenados);
 
     // Devuelve el plan con los IDs generados por la BD (idplan, idrutina)
     return res.status(201).json({ success: true, data: { plan: savedPlan } });

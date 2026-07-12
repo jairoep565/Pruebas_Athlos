@@ -5,12 +5,16 @@ const URL_BACKEND = import.meta.env.VITE_URL_BACKEND || "http://localhost:3000";
 
 const pasos = ["Analizando tu perfil", "Seleccionando ejercicios", "Organizando series y repeticiones", "Preparando tu plan"];
 
+const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
 const GenerarPlan = () => {
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(0);
   const [error, setError] = useState("");
   const [intento, setIntento] = useState(0);
   const [retryAfter, setRetryAfter] = useState(0);
+  const [diasSeleccionados, setDiasSeleccionados] = useState<string[]>([]);
+  const [generando, setGenerando] = useState(false);
 
   useEffect(() => {
     if (retryAfter <= 0) return;
@@ -19,6 +23,7 @@ const GenerarPlan = () => {
   }, [retryAfter > 0]);
 
   useEffect(() => {
+    if (!generando) return;
     let activo = true;
     const intervalo = window.setInterval(() => setPasoActual((actual) => Math.min(actual + 1, pasos.length - 1)), 1100);
 
@@ -56,7 +61,7 @@ const GenerarPlan = () => {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ perfil }),
+          body: JSON.stringify({ perfil, diasEntrenamiento: diasSeleccionados }),
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
@@ -79,7 +84,49 @@ const GenerarPlan = () => {
       window.clearInterval(intervalo);
       activo = false;
     };
-  }, [navigate, intento]);
+  }, [navigate, intento, generando]);
+
+  const alternarDia = (dia: string) => {
+    setDiasSeleccionados((actuales) =>
+      actuales.includes(dia) ? actuales.filter((item) => item !== dia) : [...actuales, dia]
+    );
+  };
+
+  if (!generando) {
+    return (
+      <div className="page-container plan-page">
+        <div className="glass-card plan-shell text-center">
+          <span className="plan-eyebrow">PLAN PERSONALIZADO</span>
+          <h2 className="fw-bold text-white mt-2">¿Qué días vas a entrenar?</h2>
+          <p className="text-muted-glass mb-4">Selecciona los días de la semana que formarán parte de tu plan.</p>
+          <div className="training-days-grid mb-4">
+            {diasSemana.map((dia) => {
+              const seleccionado = diasSeleccionados.includes(dia);
+              return (
+                <button
+                  type="button"
+                  key={dia}
+                  className={`training-day-button ${seleccionado ? "training-day-button-selected" : ""}`}
+                  aria-pressed={seleccionado}
+                  onClick={() => alternarDia(dia)}
+                >
+                  {dia}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            className="btn glass-btn-primary w-100"
+            disabled={diasSeleccionados.length === 0}
+            onClick={() => setGenerando(true)}
+          >
+            Generar plan ({diasSeleccionados.length} {diasSeleccionados.length === 1 ? "día" : "días"})
+          </button>
+          <button className="btn btn-link text-muted-glass mt-2" onClick={() => navigate("/Menu")}>Volver al menú</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container plan-page">
