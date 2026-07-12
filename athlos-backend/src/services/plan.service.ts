@@ -88,6 +88,7 @@ export interface StoredPlanDetail extends StoredPlanSummary {
       idejercicio: number;
       nombre: string;
       descripcion: string;
+      link: string;
       series: number;
       repeticiones: number;
     }>;
@@ -137,9 +138,10 @@ export const getPlanByIdForUser = async (
        r.duracion AS "rutinaDuracion",
        r.estado::text AS estado,
        e.idejercicio,
-       e.nombre AS "ejercicioNombre",
-       COALESCE(e.descripcion, '') AS descripcion,
-       re.series,
+        e.nombre AS "ejercicioNombre",
+        COALESCE(e.descripcion, '') AS descripcion,
+        COALESCE(e.link, '') AS link,
+        re.series,
        re.repeticiones
      FROM rutina r
      LEFT JOIN rutinaejercicio re ON re.idrutina = r.idrutina
@@ -165,6 +167,7 @@ export const getPlanByIdForUser = async (
         idejercicio: row.idejercicio,
         nombre: row.ejercicioNombre,
         descripcion: row.descripcion,
+        link: row.link,
         series: row.series,
         repeticiones: row.repeticiones,
       });
@@ -381,7 +384,8 @@ const validatePlan = (
 
 const buildRAGPrompt = (
   user: UserProfile,
-  catalog: IExerciseCatalogForPlan[]
+  catalog: IExerciseCatalogForPlan[],
+  diasEntrenamiento: string[]
 ): string => {
   const catalogJSON = JSON.stringify(
     catalog.map((e) => ({
@@ -397,6 +401,7 @@ const buildRAGPrompt = (
 - Peso: ${user.peso || 'No especificado'} kg
 - Talla: ${user.talla || 'No especificada'} cm
 - Entorno de entrenamiento: ${user.entorno || 'casa'}
+- Días elegidos para entrenar: ${diasEntrenamiento.join(', ')}
 
 Tienes ESTRICTAMENTE PROHIBIDO inventar ejercicios. DEBES seleccionar los ejercicios UNICAMENTE del siguiente catalogo JSON que te proporciono:
 ${catalogJSON}
@@ -404,10 +409,11 @@ ${catalogJSON}
 Si un ejercicio no esta en esta lista, no lo uses.
 
 ESTRUCTURA DE RESPUESTA:
-Genera UNICAMENTE un microciclo semanal (maximo 5 rutinas). El usuario repetira esta semana durante la duracion total del plan.
+Genera UNICAMENTE un microciclo semanal de exactamente ${diasEntrenamiento.length} rutinas. El usuario repetira esta semana durante la duracion total del plan.
 Cada rutina representa un dia de entrenamiento.
-La cantidad de rutinas debe coincidir con "diasPorSemana" (maximo 5).
-Cada rutina tiene: "nombre" (ej: "Dia 1 - Tren Superior"), "duracion" (en minutos), y un array "ejercicios" con entre 3 y 6 ejercicios.
+"diasPorSemana" debe ser exactamente ${diasEntrenamiento.length}.
+Las rutinas deben aparecer en este orden: ${diasEntrenamiento.join(', ')}.
+Cada rutina tiene: "nombre" comenzando con el día correspondiente (ej: "Lunes - Tren superior"), "duracion" (en minutos), y un array "ejercicios" con entre 3 y 6 ejercicios. Nunca uses nombres como "Día 1", "Día 2", etc.
 
 REGLAS PARA EJERCICIOS:
 1. La propiedad "id" de cada ejercicio DEBE ser el "idejercicio" exacto del catalogo, convertido a string.
@@ -501,7 +507,7 @@ const savePlanToDatabase = async (
 //  Función principal: generateTrainingPlan (RAG + Persistencia)
 // ══════════════════════════════════════════════════════════════════════
 
-export const generateTrainingPlan = async (userId: string): Promise<SavedPlan> => {
+export const generateTrainingPlan = async (userId: string, diasEntrenamiento: string[]): Promise<SavedPlan> => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'TU_API_KEY_AQUI') throw new Error('GEMINI_API_KEY no esta configurada');
 
